@@ -12,7 +12,11 @@ void AVGMotorGrafico::setup(int w, int h)
 	fboTex.allocate(w, h, GL_RGBA32F);
 	fbo2.allocate(w, h, GL_RGBA32F);
 	fboOut.allocate(w, h, GL_RGBA32F);
-	
+	ofDisableArbTex();
+	fboNoARB.allocate(w, h, GL_RGBA32F);
+	ofEnableArbTex();
+	effectsManager.setup(w, h);
+
 //	texMask.allocate(w, h, GL_LUMINANCE);
 
 	//imagenOrigen.allocate(w,h);
@@ -156,6 +160,21 @@ void AVGMotorGrafico::draw( void )
 	// en el caso de que el ping pong esté habilitado, lo utilizamos sobre el fbo actual
 	// el shader ping pong le aplicara un blur segun el parámetro kernelSize, y un alpha damping
 	// TODO: incluir el invertir en este shader también, para matar los 3 pajaros en un shader
+	if (effectsManager.getNumActiveFilters() > 0)
+	{
+		fboNoARB.begin();
+			fbo.draw(0,0);
+		fboNoARB.end();
+
+		fbo2.begin();
+			effectsManager.drawWithFilter(fboNoARB.getTextureReference());
+		fbo2.end();
+
+		fbo.begin();
+			fbo2.draw(0,0);
+		fbo.end();
+	}
+
 	if (bUsePingPong)
 		drawPingPong();
 
@@ -560,3 +579,11 @@ void AVGMotorGrafico::setAudioTexture( ofTexture tex )
 //	maskType = MASK_TYPE_TEX;
 //	texMaskExterna = tex;
 //}
+
+
+void AVGMotorGrafico::drawFilterGui()
+{
+	
+	effectsManager.drawGui();
+
+}

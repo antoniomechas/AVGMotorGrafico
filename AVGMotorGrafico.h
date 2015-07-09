@@ -4,7 +4,7 @@
 #include "ofxOpenCv.h"
 #include "ofxGui.h"
 #include "ofxPostProcessing.h"
-#include "ofxFilterLibrary.h"
+#include "EffectsManager.h"
 
 #define MILIS_CHECK 1000			// Mirará si el shader ha cambiado cada 1000 milis = 1 seg
 //#define MASK_TYPE_IMG 0
@@ -17,15 +17,16 @@ class AVGMotorGrafico
 		
 		//enum tipoOrigen {ORIGEN_IMAGEN, ORIGEN_CAPTURA_DRAW};
 
-		void		draw();
-		void		setup( int w, int h);
-		void		update( ofxCvGrayscaleImage *img);
-		//void		setImagenOrigen( tipoOrigen t);
-		void		beginCaptureDraw();
-		void		endCaptureDraw();
-		void		setAudioTexture( ofTexture tex );									// Establece la textura que se utilizará como entrada de audio
+		void		draw						( );
+		void		setup						( int w, int h );
+		void		update						( ofxCvGrayscaleImage *img );
+		void		beginCaptureDraw			( );
+		void		endCaptureDraw				( );
+		void		setAudioTexture				( ofTexture tex );						// Establece la textura que se utilizará como entrada de audio
+		void		drawFilterGui				( );
 		//void		setMaskTexture( ofxCvGrayscaleImage img);							// le pasa una imagen parar guardar la textura
 		//void		setMaskTexture( ofTexture *tex);									// le pasa una textura externa para que la utilice como mascara
+		//void		setImagenOrigen				( tipoOrigen t);
 
 		ofxToggle		bUsaShader;				//  Dibujará utilizando el shader
 		ofxToggle		bOn;					//  si está activo o no
@@ -81,7 +82,7 @@ class AVGMotorGrafico
 		ofFbo				fbo;
 		ofFbo				fbo2;
 		ofFbo				fboTex;
-
+		ofFbo				fboNoARB;
 		//ofxCvGrayscaleImage	imagenOrigen;
 		//ofxCvColorImage		imagenDestino;		//  Se utilizará para dibujar
 		//ofxCvColorImage     imagenFondo;		//  Se carga de disco para utilizarla como fondo o para darle efectos
@@ -103,6 +104,8 @@ class AVGMotorGrafico
 		//int					maskType;			// 0 = mascara es texMask, 1 = mascara es un referencia a una textura externa en texMaskExterna
 
 		ofxPostProcessing	post;
+
+		EffectsManager		effectsManager;
 
 		// Para el fbo de pingPong
 		ofFbo					pingPong[2];
