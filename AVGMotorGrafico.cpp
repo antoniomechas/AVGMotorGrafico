@@ -119,64 +119,68 @@ void AVGMotorGrafico::draw( void )
 		}
 	}
 
-	//if (tOrigen == ORIGEN_IMAGEN) //  si el modo es capturaDraw, fboTex ya tendrá capturado el draw
-	//{
-	//
-	//	ofPushStyle();
-	//	ofPushMatrix();
-	//	fboTex.begin();
-	//        ofClear(0,255);
-	//		imagenOrigen.draw(0,0);
-	//	fboTex.end();
-	//    ofPopMatrix();
- //       ofPopStyle();	
-
-	//}		
-	
-	// En este punto, fboTex contiene la captura del draw
-	// puede ser la copia de src, en el caso de que se esté utilizando Ping Pong
-
 	ofDisableAlphaBlending();
-	//fbo.begin();
-	//
-	//	if (bUsaShader)
-	//		drawShader();
-	//	else	
-	//		fboTex.draw(0,0);		//  Dibujamos la imagen de origen, ya que no se utiliza el shader
-
-	//fbo.end();
-
 	
 	if (bUsaShader)
 	{
 		fbo.begin();
 			drawShader();
 		fbo.end();
+		nextFbo = &fbo;
 	}
 	else	
-		fbo = fboTex;
+		nextFbo = &fboTex;
 
-	// En fbo tenemos el resultado hasta ahora de la imagen resultante
+	// En nextFbo tenemos el resultado hasta ahora de la imagen resultante
 	// en el caso de que el ping pong esté habilitado, lo utilizamos sobre el fbo actual
 	// el shader ping pong le aplicara un blur segun el parámetro kernelSize, y un alpha damping
 	// TODO: incluir el invertir en este shader también, para matar los 3 pajaros en un shader
+	
+	drawPingPong(nextFbo);
+
 	if (effectsManager.getNumActiveFilters() > 0)
 	{
 		fboNoARB.begin();
-			fbo.draw(0,0);
+			nextFbo->draw(0,0);
 		fboNoARB.end();
 
 		fbo2.begin();
 			effectsManager.drawWithFilter(fboNoARB.getTextureReference());
 		fbo2.end();
-
-		fbo.begin();
-			fbo2.draw(0,0);
-		fbo.end();
+		nextFbo = &fbo2;
 	}
 
-	if (bUsePingPong)
-		drawPingPong();
+
+	if (bPostBloom || bPostFxaa)
+	{
+		fbo.begin();
+			post[0]->setEnabled(bPostBloom);
+			post[1]->setEnabled(bPostFxaa);
+			post.begin();
+				nextFbo->draw(0,0,width,height);
+			post.end();
+		fbo.end();
+		nextFbo = &fbo;
+	}
+
+	drawInvertir(nextFbo);
+	
+	//fbo2.draw(0,0);
+	
+	nextFbo->draw(0,0);
+
+	//if (bClipping)
+	//	drawClipping();
+
+	ofPopStyle();
+
+}
+
+//	
+//
+void AVGMotorGrafico::drawInvertir(ofFbo *srcFbo)
+{
+	bool bDoInvertir = false;
 
 	if (bInvertir && !bFlash)
 		bDoInvertir = true;
@@ -198,107 +202,51 @@ void AVGMotorGrafico::draw( void )
 		}
 	}
 
-	fbo2.begin();
-
-		if (bDoInvertir)
-		{
+	if (bDoInvertir)
+	{
+		fbo2.begin();
 			shaderI.begin();
-			shaderI.setUniformTexture("tex0", fbo.getTextureReference(),  1);
+			shaderI.setUniformTexture("tex0", srcFbo->getTextureReference(),  1);
 			renderDummy();
 			shaderI.end();
-		}
-		else
-		{
-			fbo.draw(0,0);
-		}
-
-	fbo2.end();
-
-	if (bDontDraw)
-		fboOut = fbo2;
-	else
-	{
-		if (bPostBloom || bPostFxaa)
-		{
-			post[0]->setEnabled(bPostBloom);
-			post[1]->setEnabled(bPostFxaa);
-			post.begin();
-				fbo2.draw(0,0,width,height);
-			post.end();
-		}
-		else
-		{
-			fbo2.draw(0,0,width,height);
-		}
+		fbo2.end();
+		nextFbo = &fbo2;
 	}
-
-	if (bClipping)
-		drawClipping();
-
-	ofPopStyle();
-
 }
+
 
 //
 //	Dibuja en el FBO de ping pong para hacerle un blur y alpha damping y mantener el resultado
 //
-void AVGMotorGrafico::drawPingPong()
+void AVGMotorGrafico::drawPingPong(ofFbo *srcFbo)
 {
-	ofSetColor(255,255,255);
-
-	//enableSelectedBlending();
 	
-	//src = fbo;
-	
-	//fbo contiene src, por lo que se utiliza 
+	if (bUsePingPong)
+	{
+		ofSetColor(255,255,255);
 
-	//src->begin();
-	//	fbo.draw();
-	//src->end();	
-	//ofDisableAlphaBlending();
-	
-	//ofEnableAlphaBlending();
-	//ofEnableBlendMode(OF_BLENDMODE_ADD);
-	
-	//glBlendFuncSeparate(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA,GL_ONE,GL_ONE_MINUS_SRC_ALPHA); 
+		ofEnableAlphaBlending();	
 
-	ofDisableAlphaBlending();
-	
-	dst->begin();
-		//ofClear(0, 0, 0, 0);
-		shaderPingPong.begin();
-			shaderPingPong.setUniformTexture("tex0", fbo.getTextureReference(), 1);
-			shaderPingPong.setUniform1i("kernelSize", iKernelSize);
-			shaderPingPong.setUniform1f("alphaDamping", fPingPongAlphaDamping);
-			//shader.setUniform1i("velX", paramVelX);
-			//shader.setUniform1i("velY", paramVelY);
-			renderDummy();
-		shaderPingPong.end();
-	dst->end();
+		src->begin();
+			srcFbo->draw(0,0);
+		src->end();
 
-	//ofEnableAlphaBlending();
-	//glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	//dst->begin();
-	//	//ofClear(0, 0, 0, 0);
-	//	fbo.draw(0,0);
-	//dst->end();
+		ofDisableAlphaBlending();
 
+		dst->begin();
+			//ofClear(0, 0, 0, 0);
+			shaderPingPong.begin();
+				shaderPingPong.setUniformTexture("tex0", src->getTextureReference(), 1);
+				shaderPingPong.setUniform1i("kernelSize", iKernelSize);
+				shaderPingPong.setUniform1f("alphaDamping", fPingPongAlphaDamping);
+				renderDummy();
+			shaderPingPong.end();
+		dst->end();
 
-	swap(src, dst);
-	
-	//ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-	
-	//ofDisableAlphaBlending();
-	
+		swap(src, dst);
 
-	fbo.begin();
-		//ofClear(0, 0, 0, 0);
-		src->draw(0,0);
-	fbo.end();
-
-	//fbo = *src;
-
-	//ofDisableAlphaBlending();
+		nextFbo = src;
+	}
 
 }
 
@@ -467,11 +415,13 @@ void AVGMotorGrafico::beginCaptureDraw()
 
 	ofPushStyle();
 	ofPushMatrix();
-	if (bUsePingPong)
-		src->begin();
-	else
-		fboTex.begin();
-	ofClear(0,0);
+	//if (bUsePingPong)
+	//	src->begin();
+	//else
+	//	fboTex.begin();
+	//ofClear(0,0);
+	fboTex.begin();
+		ofClear(0,1);
 }
 
 void AVGMotorGrafico::endCaptureDraw()
@@ -479,20 +429,22 @@ void AVGMotorGrafico::endCaptureDraw()
 	if (!bOn)
 		return;
 	
-	if (bUsePingPong)
-	{
-		src->end();
-		// copio src en fboTex para que utilice siempre este FBO en los shaders a continuación
-		//fboTex = *src;
-		ofEnableAlphaBlending();
-		//ofEnableBlendMode(OF_BLENDMODE_ALPHA);
-		fboTex.begin();
-			src->draw(0,0);
-		fboTex.end();
-		ofDisableAlphaBlending();
-	}
-	else
-		fboTex.end();
+	//if (bUsePingPong)
+	//{
+	//	src->end();
+	//	// copio src en fboTex para que utilice siempre este FBO en los shaders a continuación
+	//	//fboTex = *src;
+	//	ofEnableAlphaBlending();
+	//	//ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+	//	fboTex.begin();
+	//		src->draw(0,0);
+	//	fboTex.end();
+	//	ofDisableAlphaBlending();
+	//}
+	//else
+	//	fboTex.end();
+
+	fboTex.end();
 
 	ofPopMatrix();
     ofPopStyle();	

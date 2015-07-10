@@ -70,7 +70,8 @@ class AVGMotorGrafico
 		//void				aplicaEfectoSobreFondo();											//  combina la imagen de fondo con la que hay que dibujar para crear efectos sobre la imagen de fondo
 		void				drawShader();														//  Dibuja lo que toque con el shader especificado
 		void				setupPingPong();													//  Inicializa el shader y los FBOs para el ping pong
-		void				drawPingPong();														//  Dibuja sobre el fbo de ping pong para aplicarle el shader de blur y alpha damping
+		void				drawPingPong( ofFbo *fboSrc);										//  Dibuja sobre el fbo de ping pong para aplicarle el shader de blur y alpha damping
+		void				drawInvertir( ofFbo *fboSrc);
 
 		string				nombreShader;
 
@@ -99,13 +100,15 @@ class AVGMotorGrafico
 		
 		unsigned long long	lastTimeChecked;	//  guarda la última vez que se miró si el archivo del shader se había actualizado
 		unsigned long long	lastTimeInterval;	//  guarda la última vez que se cambió de un estado a otro según el intervalo (de invertido a no)
-		bool				bDoInvertir;			//  se pondrá a true si hay que invertir, porque se ha marcado en el gui o porque toca por intervalo
 		
 		//int					maskType;			// 0 = mascara es texMask, 1 = mascara es un referencia a una textura externa en texMaskExterna
 
 		ofxPostProcessing	post;
 
 		EffectsManager		effectsManager;
+
+		//Para llevar donde se va escribiendo en cada paso
+		ofFbo				*nextFbo;
 
 		// Para el fbo de pingPong
 		ofFbo					pingPong[2];
