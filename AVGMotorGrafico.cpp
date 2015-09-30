@@ -123,6 +123,7 @@ void AVGMotorGrafico::draw( void )
 	
 	if (bUsaShader)
 	{
+
 		fbo.begin();
 			drawShader();
 		fbo.end();
@@ -167,7 +168,7 @@ void AVGMotorGrafico::draw( void )
 	
 	//fbo2.draw(0,0);
 	
-	nextFbo->draw(0,0);
+	nextFbo->draw(0,0); 
 
 	//if (bClipping)
 	//	drawClipping();
@@ -422,6 +423,7 @@ void AVGMotorGrafico::beginCaptureDraw()
 	//ofClear(0,0);
 	fboTex.begin();
 		ofClear(0,1);
+		//ofBackground(backgroundColor);
 }
 
 void AVGMotorGrafico::endCaptureDraw()

@@ -43,6 +43,8 @@ class AVGMotorGrafico
 		ofxToggle		bPostBloom;				//  ofxPostProcessing
 		ofxToggle		bPostFxaa;				//  ofxPostProcessing
 
+		ofColor			backgroundColor;		//  se actualiza desde el gui para definir el color de fondo
+
 		ofVec2f			shaderCenter;			//  Centro del objeto del shader
 		float			shaderHeight;			//  Alto del objeto
 		float			shaderWidth;			//	Ancho del objeto
@@ -59,10 +61,12 @@ class AVGMotorGrafico
 		float			volumen;
 
 		ofFbo			fboOut;					// Se utliza cuando no se quiere dibujar en pantalla, sino en un fbo para reutilizarlo después
+	
+		EffectsManager	effectsManager;
 
 
 	private:
-		
+		 
 		void				renderDummy();
 		void				drawClipping();														//  Recorta la imagen
 		void				setNombreShader();													//  Rellena la variable nombreShader con el nombre del shader escogido con iShader.
@@ -104,8 +108,6 @@ class AVGMotorGrafico
 		//int					maskType;			// 0 = mascara es texMask, 1 = mascara es un referencia a una textura externa en texMaskExterna
 
 		ofxPostProcessing	post;
-
-		EffectsManager		effectsManager;
 
 		//Para llevar donde se va escribiendo en cada paso
 		ofFbo				*nextFbo;
